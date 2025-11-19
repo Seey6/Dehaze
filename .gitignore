@@ -1,2 +1,3 @@
 .venv
 obj_dir
+sim/waveform.vcd
