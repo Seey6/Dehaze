@@ -62,7 +62,7 @@ module min3x3 #(
     // Actually, once we have 2 rows + 3 pixels, we can output.
     // But for a stream, we usually output aligned with the center or just delayed.
     // Let's count valid pixels to handle startup.
-    reg [3:0] valid_pipe;
+    reg [2:0] valid_pipe;
 
     reg [15:0] pixel_cnt;
     reg        process_en;
@@ -110,7 +110,7 @@ module min3x3 #(
             valid_pipe <= 0;
         end
         else begin
-            valid_pipe <= {valid_pipe[2:0], valid_in};
+            valid_pipe <= {valid_pipe[1:0], valid_in};
         end
     end
 
