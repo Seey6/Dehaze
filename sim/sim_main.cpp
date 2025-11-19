@@ -19,11 +19,11 @@ uint8_t get_pixel(const std::vector<uint8_t>& img, int x, int y, int width) {
     return img[y * width + x];
 }
 
-// Software 3x3 min filter calculation for a single channel
-uint8_t calc_min3x3_window(const std::vector<uint8_t>& img, int cx, int cy, int width) {
+// Software 9x9 min filter calculation for a single channel
+uint8_t calc_min9x9_window(const std::vector<uint8_t>& img, int cx, int cy, int width) {
     uint8_t min_val = 255;
-    for (int dy = -1; dy <= 1; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
+    for (int dy = -4; dy <= 4; dy++) {
+        for (int dx = -4; dx <= 4; dx++) {
             uint8_t val = get_pixel(img, cx + dx, cy + dy, width);
             if (val < min_val) min_val = val;
         }
@@ -56,14 +56,18 @@ int main(int argc, char** argv) {
         b_data[i] = std::rand() % 256;
     }
 
-    // 2. Calculate Expected Outputs (Software Reference 3x3)
-    // The 3x3 filter is valid for centers at (1,1) to (WIDTH-2, HEIGHT-2)
+    // 2. Calculate Expected Outputs (Software Reference 9x9)
+    // The 9x9 filter is valid for centers at (4,4) to (WIDTH-5, HEIGHT-5)
     std::vector<uint8_t> expected_outputs;
-    std::cout << "Calculating expected outputs for 3x3..." << std::endl;
-    for (int y = 1; y < HEIGHT - 1; y++) {
-        for (int x = 1; x < WIDTH - 1; x++) {
-            uint8_t min_r = calc_min3x3_window(r_data, x, y, WIDTH);
-            expected_outputs.push_back(min_r);
+    std::cout << "Calculating expected outputs for 9x9..." << std::endl;
+    for (int y = 4; y < HEIGHT - 4; y++) {
+        for (int x = 4; x < WIDTH - 4; x++) {
+            uint8_t min_r = calc_min9x9_window(r_data, x, y, WIDTH);
+            uint8_t min_g = calc_min9x9_window(g_data, x, y, WIDTH);
+            uint8_t min_b = calc_min9x9_window(b_data, x, y, WIDTH);
+            // Dark channel is minimum of R, G, B
+            uint8_t dark = std::min({min_r, min_g, min_b});
+            expected_outputs.push_back(dark);
         }
     }
     std::cout << "Expected valid pixels: " << expected_outputs.size() << std::endl;
@@ -87,10 +91,10 @@ int main(int argc, char** argv) {
     int error_count = 0;
     int valid_out_count = 0;
     
-    // Hardware output coordinate trackers for 3x3
-    // Stage 1 starts outputting at (1,1)
-    int hw_x = 1;
-    int hw_y = 1;
+    // Hardware output coordinate trackers for 9x9
+    // Stage 1 starts outputting at (4,4)
+    int hw_x = 4;
+    int hw_y = 4;
 
     std::cout << "Starting hardware simulation..." << std::endl;
 
@@ -115,8 +119,8 @@ int main(int argc, char** argv) {
         if (top->clk) { // Check Output on Rising Edge (after eval)
             if (top->valid_out) {
                 // Check if current HW pixel is in the valid verification region
-                // Valid X range for 3x3: [1, WIDTH-2]
-                bool is_valid_region = (hw_x >= 1 && hw_x <= WIDTH - 2);
+                // Valid X range for 9x9: [4, WIDTH-5]
+                bool is_valid_region = (hw_x >= 4 && hw_x <= WIDTH - 5);
                 
                 if (is_valid_region) {
                     if (out_pixel_idx < expected_outputs.size()) {
