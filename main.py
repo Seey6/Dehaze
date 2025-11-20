@@ -77,7 +77,7 @@ def dehaze_hardware_prototype(img_path):
     
     # 对下采样后的图进行 15x15 最小值滤波
     # 对应论文 Fig. 3 中的操作 [cite: 208]
-    dark_channel_ds = custom_min_filter_pure(min_channel_ds, kernel_size=15)
+    dark_channel_ds = custom_min_filter_pure(min_channel_ds, kernel_size=9)
     
     print(f"滤波耗时: {time.time() - start_time:.4f}s")
 
